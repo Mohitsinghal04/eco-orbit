@@ -94,6 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
     recalculateEmissions();
     updatePointsUI();
     updateActionsUI();
+    hideOnboarding();
   }
 });
 
@@ -116,16 +117,16 @@ function saveState() {
 
 // Show onboarding modal
 function showOnboarding() {
-  onboardingModal.style.display = "flex";
+  onboardingModal.classList.remove("hidden");
   onboardingModal.setAttribute("aria-hidden", "false");
   
   // Show close button only if user has already saved a profile (not first launch)
   const closeBtn = document.getElementById("modal-close-btn");
   if (closeBtn) {
     if (localStorage.getItem(STATE_KEY)) {
-      closeBtn.style.display = "flex";
+      closeBtn.classList.remove("hidden");
     } else {
-      closeBtn.style.display = "none";
+      closeBtn.classList.add("hidden");
     }
   }
   
@@ -138,7 +139,7 @@ function showOnboarding() {
 
 // Hide onboarding modal
 function hideOnboarding() {
-  onboardingModal.style.display = "none";
+  onboardingModal.classList.add("hidden");
   onboardingModal.setAttribute("aria-hidden", "true");
 }
 
@@ -152,7 +153,7 @@ function initUIListeners() {
 
   // Escape key handler to close onboarding
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && onboardingModal.style.display === "flex") {
+    if (e.key === "Escape" && !onboardingModal.classList.contains("hidden")) {
       // Only close if user has a profile saved
       if (localStorage.getItem(STATE_KEY)) {
         hideOnboarding();
@@ -432,8 +433,8 @@ function updateEmissionsUI() {
     
     const segment = document.getElementById(`segment-${cat}`);
     if (segment) {
-      segment.style.strokeDasharray = `${dashLength} ${C}`;
-      segment.style.strokeDashoffset = `${offset}`;
+      segment.setAttribute("stroke-dasharray", `${dashLength} ${C}`);
+      segment.setAttribute("stroke-dashoffset", `${offset}`);
     }
 
     // Update legend UI
@@ -495,8 +496,8 @@ function completeChallenge(challengeId, points) {
   
   // Flash effect on points card
   const card = metricEcoPoints.parentElement.parentElement;
-  card.style.transform = "scale(1.08)";
-  setTimeout(() => card.style.transform = "none", 300);
+  card.classList.add("flash-scale");
+  setTimeout(() => card.classList.remove("flash-scale"), 300);
 
   updatePointsUI();
   saveState();
@@ -606,8 +607,7 @@ async function sendMessage(messageText) {
   const typingBubble = document.createElement("div");
   typingBubble.className = "message assistant-message";
   const bubbleInner = document.createElement("div");
-  bubbleInner.className = "message-bubble";
-  bubbleInner.style.opacity = "0.6";
+  bubbleInner.className = "message-bubble analyzing";
   bubbleInner.textContent = "EcoCoach is analyzing...";
   typingBubble.appendChild(bubbleInner);
   chatMessages.appendChild(typingBubble);

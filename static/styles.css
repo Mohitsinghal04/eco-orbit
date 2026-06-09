@@ -1106,4 +1106,24 @@ select:focus-visible,
   color: var(--accent-purple);
 }
 
+/* Visibility and dynamic animation utility classes (CSP-compliant) */
+.hidden {
+  display: none !important;
+}
+
+@keyframes flashScale {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.flash-scale {
+  animation: flashScale 0.3s ease-in-out;
+}
+
+.message-bubble.analyzing {
+  opacity: 0.6;
+}
+
+
 
