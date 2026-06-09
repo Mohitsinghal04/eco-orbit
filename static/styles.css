@@ -1085,3 +1085,25 @@ select:focus-visible,
   margin-top: 8px !important;
 }
 
+/* Font weight and color utility classes */
+.font-bold {
+  font-weight: 700;
+}
+
+.text-teal {
+  color: var(--accent-teal);
+}
+
+.text-emerald {
+  color: var(--accent-emerald);
+}
+
+.text-coral {
+  color: var(--accent-coral);
+}
+
+.text-purple {
+  color: var(--accent-purple);
+}
+
+
