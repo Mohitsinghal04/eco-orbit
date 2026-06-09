@@ -3,7 +3,9 @@ Unit tests for the rules-based sustainability fallback engine in EcoOrbit.
 Run tests using: pytest
 """
 
-from coach import get_rule_based_advice
+from unittest.mock import MagicMock, patch
+
+from coach import generate_coach_response, get_rule_based_advice
 
 
 def test_fallback_advice_transport_highest():
@@ -77,3 +79,43 @@ def test_fallback_advice_consumption_highest():
     assert len(advice["tips"]) == 3
     assert advice["tips"][0]["title"] == "Thrift & Secondhand"
     assert "-10 kg CO2e/item avoided" in advice["tips"][0]["estimated_reduction"]
+
+
+def test_generate_coach_response_fallback_no_key():
+    """Verify generate_coach_response falls back to rules-based when Gemini is disabled."""
+    with patch("coach.has_gemini", False):
+        emissions = {
+            "transport": 50.0,
+            "home": 60.0,
+            "food": 200.0,
+            "consumption": 30.0,
+            "total": 340.0,
+        }
+        res = generate_coach_response("urban_commuter", emissions, [])
+        assert res["highest_category"] == "Food"
+        assert "EcoCoach" in res["intro"]
+
+
+def test_generate_coach_response_gemini_success():
+    """Verify generate_coach_response parses successful Gemini JSON response."""
+    with patch("google.generativeai.GenerativeModel.generate_content") as mock_generate:
+        mock_response = MagicMock()
+        mock_response.text = (
+            '{"intro": "Hello test", "highest_category": "Transport", '
+            '"tips": [{"title": "Ride bike", "description": "Bike more", '
+            '"estimated_reduction": "-10 kg"}], "conclusion": "Bye test"}'
+        )
+        mock_generate.return_value = mock_response
+
+        with patch("coach.has_gemini", True):
+            emissions = {
+                "transport": 100.0,
+                "home": 50.0,
+                "food": 50.0,
+                "consumption": 50.0,
+                "total": 250.0,
+            }
+            res = generate_coach_response("urban_commuter", emissions, [])
+            assert res["intro"] == "Hello test"
+            assert res["highest_category"] == "Transport"
+            assert res["tips"][0]["title"] == "Ride bike"
