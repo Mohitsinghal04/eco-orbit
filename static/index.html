@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoOrbit - Smart Carbon Tracker & AI Coach</title>
+  <meta name="description" content="Calculate, track, and reduce your carbon footprint with customized insights and our virtual sustainability AI coach.">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Google Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Background Ambient Glows -->
+  <div class="ambient-glow glow-1" aria-hidden="true"></div>
+  <div class="ambient-glow glow-2" aria-hidden="true"></div>
+
+  <!-- Onboarding Modal -->
+  <div id="onboarding-modal" class="modal-overlay" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+    <div class="modal-content glass-card">
+      <button class="modal-close-btn" id="modal-close-btn" type="button" aria-label="Close onboarding modal">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <div class="modal-header">
+        <div class="logo-mark">
+          <span class="material-symbols-outlined icon-spin">eco</span>
+          <h1>EcoOrbit</h1>
+        </div>
+        <h2 id="modal-title">Choose Your Challenge Vertical</h2>
+        <p>To personalize your carbon calculations and AI recommendations, select the persona that best matches your current lifestyle:</p>
+      </div>
+
+      <div class="persona-grid">
+        <!-- Persona 1: Urban Commuter -->
+        <button class="persona-card glass-card-interactive" id="btn-urban-commuter" type="button" aria-label="Select Urban Commuter Persona">
+          <span class="material-symbols-outlined persona-icon accent-teal">directions_subway</span>
+          <h3>Urban Commuter</h3>
+          <p>Lives in a city, relies heavily on public transit or ridesharing, rents an apartment, and frequently orders delivery or eats out.</p>
+        </button>
+
+        <!-- Persona 2: Suburban Homeowner -->
+        <button class="persona-card glass-card-interactive" id="btn-suburban-homeowner" type="button" aria-label="Select Suburban Homeowner Persona">
+          <span class="material-symbols-outlined persona-icon accent-emerald">home_work</span>
+          <h3>Suburban Homeowner</h3>
+          <p>Commutes via car, owns a single-family house, manages standard utilities, and buys family groceries regularly.</p>
+        </button>
+
+        <!-- Persona 3: Global Jetsetter -->
+        <button class="persona-card glass-card-interactive" id="btn-global-jetsetter" type="button" aria-label="Select Global Jetsetter Persona">
+          <span class="material-symbols-outlined persona-icon accent-coral">flight_takeoff</span>
+          <h3>Global Jetsetter</h3>
+          <p>Travels frequently by air for business or leisure, stays in hotels, and dines out at high-impact venues.</p>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Layout -->
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header glass-card">
+      <div class="header-left">
+        <span class="material-symbols-outlined header-logo">eco</span>
+        <div class="brand-text">
+          <h1>EcoOrbit</h1>
+          <p>Smart Carbon Assistant</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="active-persona-indicator">
+          <span class="indicator-dot"></span>
+          <span id="active-persona-text">Persona: Urban Commuter</span>
+        </div>
+        <button class="btn-secondary btn-small" id="change-persona-btn" aria-label="Change current lifestyle persona">
+          <span class="material-symbols-outlined">cached</span> Switch Persona
+        </button>
+      </div>
+    </header>
+
+    <!-- Metrics Row -->
+    <section class="metrics-row" aria-label="Key Performance Indicators">
+      <!-- Metric 1: Carbon footprint -->
+      <div class="metric-card glass-card">
+        <div class="metric-info">
+          <p class="metric-label">Monthly Footprint</p>
+          <h2 id="metric-total-footprint">0.0 <span class="unit">kg CO2e</span></h2>
+        </div>
+        <div class="metric-icon-wrapper accent-coral-bg">
+          <span class="material-symbols-outlined text-coral">co2</span>
+        </div>
+      </div>
+
+      <!-- Metric 2: Net projection -->
+      <div class="metric-card glass-card">
+        <div class="metric-info">
+          <p class="metric-label">Projected Reduction</p>
+          <h2 id="metric-projected-reduction">-0.0 <span class="unit">kg CO2e</span></h2>
+        </div>
+        <div class="metric-icon-wrapper accent-teal-bg">
+          <span class="material-symbols-outlined text-teal">trending_down</span>
+        </div>
+      </div>
+
+      <!-- Metric 3: Eco-Points -->
+      <div class="metric-card glass-card">
+        <div class="metric-info">
+          <p class="metric-label">Eco-Points Earned</p>
+          <h2 id="metric-eco-points">0 <span class="unit">pts</span></h2>
+        </div>
+        <div class="metric-icon-wrapper accent-emerald-bg">
+          <span class="material-symbols-outlined text-emerald">workspace_premium</span>
+        </div>
+      </div>
+
+      <!-- Metric 4: active challenges -->
+      <div class="metric-card glass-card">
+        <div class="metric-info">
+          <p class="metric-label">Rank Status</p>
+          <h2 id="metric-rank">Eco Novice</h2>
+        </div>
+        <div class="metric-icon-wrapper accent-purple-bg">
+          <span class="material-symbols-outlined text-purple">spa</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Workspace Grid -->
+    <main class="workspace-grid">
+      
+      <!-- Calculator Panel (Left Column) -->
+      <section class="workspace-panel glass-card panel-left" aria-label="Carbon Calculators">
+        <div class="panel-header">
+          <h2><span class="material-symbols-outlined text-emerald">bar_chart</span> Emission Trackers</h2>
+          <p>Tweak your monthly habits to see recalculations instantly.</p>
+        </div>
+
+        <!-- Calculator Tabs -->
+        <div class="tab-buttons" role="tablist" aria-label="Calculator Categories">
+          <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-transport" id="tab-btn-transport">
+            <span class="material-symbols-outlined">directions_car</span> Transport
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-home" id="tab-btn-home">
+            <span class="material-symbols-outlined">home</span> Home
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-food" id="tab-btn-food">
+            <span class="material-symbols-outlined">restaurant</span> Food
+          </button>
+          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-shopping" id="tab-btn-shopping">
+            <span class="material-symbols-outlined">shopping_bag</span> Shopping
+          </button>
+        </div>
+
+        <form id="calculator-form">
+          <!-- Tab 1: Transport -->
+          <div class="tab-content active" id="tab-transport" role="tabpanel" aria-labelledby="tab-btn-transport">
+            <div class="input-group">
+              <label for="input-car-distance">Monthly Car Distance (km)</label>
+              <div class="slider-container">
+                <input type="range" id="input-car-distance" min="0" max="5000" step="50" value="0">
+                <span class="value-bubble" id="val-car-distance">0 km</span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="input-car-fuel">Car Fuel / Powertrain</label>
+              <select id="input-car-fuel">
+                <option value="car_petrol">Petrol (Standard Gasoline)</option>
+                <option value="car_diesel">Diesel</option>
+                <option value="car_hybrid">Hybrid (Petrol-Electric)</option>
+                <option value="car_electric">Electric (EV)</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label for="input-transit-distance">Public Transit Distance (km/month)</label>
+              <div class="slider-container">
+                <input type="range" id="input-transit-distance" min="0" max="2000" step="20" value="0">
+                <span class="value-bubble" id="val-transit-distance">0 km</span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="input-flight-hours">Monthly Flight Hours</label>
+              <div class="slider-container">
+                <input type="range" id="input-flight-hours" min="0" max="50" step="1" value="0">
+                <span class="value-bubble" id="val-flight-hours">0 hrs</span>
+              </div>
+              <small class="input-helper">Includes standard commercial short & long haul flights.</small>
+            </div>
+          </div>
+
+          <!-- Tab 2: Home -->
+          <div class="tab-content" id="tab-home" role="tabpanel" aria-labelledby="tab-btn-home">
+            <div class="input-group">
+              <label for="input-electricity-kwh">Monthly Electricity Usage (kWh)</label>
+              <div class="slider-container">
+                <input type="range" id="input-electricity-kwh" min="0" max="1500" step="10" value="0">
+                <span class="value-bubble" id="val-electricity-kwh">0 kWh</span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="input-gas-kwh">Monthly Gas / Heating Usage (kWh)</label>
+              <div class="slider-container">
+                <input type="range" id="input-gas-kwh" min="0" max="2000" step="20" value="0">
+                <span class="value-bubble" id="val-gas-kwh">0 kWh</span>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="input-waste-kg">Household Waste Generated (kg/month)</label>
+              <div class="slider-container">
+                <input type="range" id="input-waste-kg" min="0" max="150" step="1" value="0">
+                <span class="value-bubble" id="val-waste-kg">0 kg</span>
+              </div>
+              <small class="input-helper">Standard landfill bag weighs roughly 8-10 kg.</small>
+            </div>
+
+            <div class="input-group">
+              <label for="input-recycling-pct">Recycling & Composting Rate (%)</label>
+              <div class="slider-container">
+                <input type="range" id="input-recycling-pct" min="0" max="100" step="5" value="0">
+                <span class="value-bubble" id="val-recycling-pct">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Food -->
+          <div class="tab-content" id="tab-food" role="tabpanel" aria-labelledby="tab-btn-food">
+            <div class="input-group">
+              <label for="input-diet-type">Dietary Profile</label>
+              <select id="input-diet-type">
+                <option value="diet_high_meat">High Meat Consumer (Daily red meat)</option>
+                <option value="diet_medium_meat">Average Meat Consumer (Regular poultry/meat)</option>
+                <option value="diet_low_meat">Low Meat Consumer (Occasional meat, fish)</option>
+                <option value="diet_vegetarian">Vegetarian (No meat, consumes dairy/eggs)</option>
+                <option value="diet_vegan">Strict Vegan (100% plant-based)</option>
+              </select>
+              <small class="input-helper">Food emissions calculations include agricultural production and supply-chain processing footprint.</small>
+            </div>
+          </div>
+
+          <!-- Tab 4: Shopping -->
+          <div class="tab-content" id="tab-shopping" role="tabpanel" aria-labelledby="tab-btn-shopping">
+            <div class="input-group">
+              <label for="input-clothing-items">New Apparel Purchased (Items/month)</label>
+              <div class="slider-container">
+                <input type="range" id="input-clothing-items" min="0" max="30" step="1" value="0">
+                <span class="value-bubble" id="val-clothing-items">0 items</span>
+              </div>
+              <small class="input-helper">Estimates average footprint of cotton, denim, and synthetic garments.</small>
+            </div>
+
+            <div class="input-group">
+              <label for="input-electronics-items">New Tech / Electronics Purchased (Devices/month)</label>
+              <div class="slider-container">
+                <input type="range" id="input-electronics-items" min="0" max="5" step="1" value="0">
+                <span class="value-bubble" id="val-electronics-items">0 devices</span>
+              </div>
+              <small class="input-helper">Covers manufacturing footprint of smartphones, tablets, or computers.</small>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- Analytics & Coach Panel (Right Column) -->
+      <div class="right-column-split">
+        
+        <!-- Emissions Chart Card -->
+        <section class="workspace-panel glass-card" aria-label="Carbon Footprint Analysis">
+          <div class="panel-header">
+            <h2><span class="material-symbols-outlined text-teal">donut_large</span> Emissions Analysis</h2>
+          </div>
+          
+          <div class="chart-content">
+            <div class="chart-svg-container">
+              <!-- Inline Dynamic SVG Chart -->
+              <svg width="220" height="220" viewBox="0 0 220 220" class="donut-chart" id="emissions-donut">
+                <circle cx="110" cy="110" r="80" class="chart-bg" />
+                <path id="segment-transport" class="chart-segment text-coral" d="" />
+                <path id="segment-home" class="chart-segment text-teal" d="" />
+                <path id="segment-food" class="chart-segment text-emerald" d="" />
+                <path id="segment-consumption" class="chart-segment text-purple" d="" />
+                <circle cx="110" cy="110" r="55" class="chart-inner" />
+                <text x="110" y="105" text-anchor="middle" class="chart-text-value" id="chart-center-val">0</text>
+                <text x="110" y="125" text-anchor="middle" class="chart-text-label">kg CO2e</text>
+              </svg>
+            </div>
+            
+            <!-- Dynamic Legend -->
+            <div class="chart-legend" id="chart-legend-container">
+              <div class="legend-item">
+                <span class="legend-color-dot bg-coral"></span>
+                <span class="legend-name">Transport</span>
+                <span class="legend-value" id="legend-val-transport">0 kg (0%)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color-dot bg-teal"></span>
+                <span class="legend-name">Home</span>
+                <span class="legend-value" id="legend-val-home">0 kg (0%)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color-dot bg-emerald"></span>
+                <span class="legend-name">Food</span>
+                <span class="legend-value" id="legend-val-food">0 kg (0%)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-color-dot bg-purple"></span>
+                <span class="legend-name">Shopping</span>
+                <span class="legend-value" id="legend-val-consumption">0 kg (0%)</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- AI Coach Console -->
+        <section class="workspace-panel glass-card coach-panel" aria-label="EcoCoach Virtual Assistant">
+          <div class="panel-header">
+            <div class="coach-title">
+              <span class="material-symbols-outlined text-emerald logo-pulse">smart_toy</span>
+              <div>
+                <h3>EcoCoach Assistant</h3>
+                <span class="badge badge-success">Google Gemini Enabled</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chat Window -->
+          <div class="chat-window" id="chat-messages" role="log" aria-live="polite">
+            <div class="message assistant-message">
+              <div class="message-bubble">
+                Hi! I am your AI Coach. Tap any question below, or type your own question to get personalized sustainability advice!
+              </div>
+            </div>
+          </div>
+
+          <!-- Suggested Chips -->
+          <div class="prompt-chips" aria-label="Suggested questions">
+            <button class="chip-btn" type="button" data-prompt="Analyze my carbon footprint breakdown and highlights">📊 Analyze Footprint</button>
+            <button class="chip-btn" type="button" data-prompt="Give me 3 specific tips to cut transport emissions">🚗 Cut Transport CO2</button>
+            <button class="chip-btn" type="button" data-prompt="What diet changes make the biggest impact?">🥗 Food & Diet Tips</button>
+          </div>
+
+          <!-- Chat Form -->
+          <form id="chat-input-form" class="chat-form">
+            <input type="text" id="chat-input-text" placeholder="Ask EcoCoach something..." aria-label="Message text" required autocomplete="off">
+            <button type="submit" class="btn-primary" aria-label="Send message">
+              <span class="material-symbols-outlined">send</span>
+            </button>
+          </form>
+        </section>
+      </div>
+    </main>
+
+    <!-- Bottom Action Section (Challenges & Action Planner) -->
+    <section class="bottom-grid">
+      <!-- Active Challenges -->
+      <article class="workspace-panel glass-card bottom-panel" aria-labelledby="challenges-title">
+        <div class="panel-header">
+          <h2 id="challenges-title"><span class="material-symbols-outlined text-purple">calendar_today</span> Weekly Eco-Challenges</h2>
+          <p>Earn Eco-Points by checking off standard weekly actions.</p>
+        </div>
+
+        <div class="challenge-list">
+          <!-- Challenge 1 -->
+          <div class="challenge-item glass-card-interactive" id="challenge-1">
+            <div class="challenge-info">
+              <h4>Meatless Monday</h4>
+              <p>Eat fully plant-based for a single day. Cuts greenhouse gases.</p>
+              <span class="badge-points">+50 Points</span>
+            </div>
+            <button class="btn-success btn-small complete-challenge-btn" type="button" data-points="50" data-target="challenge-1" aria-label="Complete Meatless Monday challenge">
+              Complete
+            </button>
+          </div>
+
+          <!-- Challenge 2 -->
+          <div class="challenge-item glass-card-interactive" id="challenge-2">
+            <div class="challenge-info">
+              <h4>Active Commute Day</h4>
+              <p>Walk, bike, or use public transit instead of driving solo.</p>
+              <span class="badge-points">+100 Points</span>
+            </div>
+            <button class="btn-success btn-small complete-challenge-btn" type="button" data-points="100" data-target="challenge-2" aria-label="Complete Active Commute challenge">
+              Complete
+            </button>
+          </div>
+
+          <!-- Challenge 3 -->
+          <div class="challenge-item glass-card-interactive" id="challenge-3">
+            <div class="challenge-info">
+              <h4>Unplug Unused Appliances</h4>
+              <p>Unplug chargers and tech to eliminate power phantom loads.</p>
+              <span class="badge-points">+30 Points</span>
+            </div>
+            <button class="btn-success btn-small complete-challenge-btn" type="button" data-points="30" data-target="challenge-3" aria-label="Complete Unplug Appliances challenge">
+              Complete
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Action Planner (Dynamic reductions) -->
+      <article class="workspace-panel glass-card bottom-panel" aria-labelledby="planner-title">
+        <div class="panel-header">
+          <h2 id="planner-title"><span class="material-symbols-outlined text-teal">task_alt</span> Carbon Reduction Planner</h2>
+          <p>Commit to actions to see your real-time carbon reduction projection.</p>
+        </div>
+
+        <div class="planner-checklist">
+          <!-- Action 1 -->
+          <label class="checkbox-container glass-card-interactive">
+            <input type="checkbox" class="reduction-checkbox" data-kg="35" aria-label="Commit to turning thermostat down 2 degrees">
+            <span class="custom-checkbox"></span>
+            <div class="checkbox-label-content">
+              <h4>Lower Heating Thermostat (-2°C)</h4>
+              <p>Reduce gas or heating oil footprint at home.</p>
+              <span class="text-teal font-semibold">-35 kg CO2e / month</span>
+            </div>
+          </label>
+
+          <!-- Action 2 -->
+          <label class="checkbox-container glass-card-interactive">
+            <input type="checkbox" class="reduction-checkbox" data-kg="50" aria-label="Commit to shifting 3 meat dinners to vegetarian">
+            <span class="custom-checkbox"></span>
+            <div class="checkbox-label-content">
+              <h4>Go Vegetarian 3 Days/Week</h4>
+              <p>Shift meals from high-impact meats to legumes or grains.</p>
+              <span class="text-teal font-semibold">-50 kg CO2e / month</span>
+            </div>
+          </label>
+
+          <!-- Action 3 -->
+          <label class="checkbox-container glass-card-interactive">
+            <input type="checkbox" class="reduction-checkbox" data-kg="15" aria-label="Commit to replacement of traditional lightbulbs with LEDs">
+            <span class="custom-checkbox"></span>
+            <div class="checkbox-label-content">
+              <h4>Retrofit with LED Bulbs</h4>
+              <p>Cut lighting electricity usage in your home.</p>
+              <span class="text-teal font-semibold">-15 kg CO2e / month</span>
+            </div>
+          </label>
+
+          <!-- Action 4 -->
+          <label class="checkbox-container glass-card-interactive">
+            <input type="checkbox" class="reduction-checkbox" data-kg="80" aria-label="Commit to carpooling or ridesharing to work">
+            <span class="custom-checkbox"></span>
+            <div class="checkbox-label-content">
+              <h4>Carpool to Work (3 Days)</h4>
+              <p>Halve transport footprint of single-occupancy travel.</p>
+              <span class="text-teal font-semibold">-80 kg CO2e / month</span>
+            </div>
+          </label>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <footer class="app-footer">
+    <p>&copy; 2026 EcoOrbit. Built with Google Cloud (Gemini API), Outfit typography, and Material Symbols. All calculations are client-side private.</p>
+  </footer>
+
+  <!-- App Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

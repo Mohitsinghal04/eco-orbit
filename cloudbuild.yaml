@@ -1,0 +1,42 @@
+steps:
+  # Step 1: Build the Docker container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t',
+      '$_AR_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/ecoorbit-app:$COMMIT_SHA',
+      '.'
+    ]
+
+  # Step 2: Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push',
+      '$_AR_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/ecoorbit-app:$COMMIT_SHA'
+    ]
+
+  # Step 3: Deploy the image to Google Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args: [
+      'run',
+      'deploy',
+      'ecoorbit',
+      '--image',
+      '$_AR_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/ecoorbit-app:$COMMIT_SHA',
+      '--region',
+      '$_RUN_REGION',
+      '--platform',
+      'managed',
+      '--allow-unauthenticated'
+    ]
+
+# Automatically identify image outputs
+images:
+  - '$_AR_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/ecoorbit-app:$COMMIT_SHA'
+
+# Regional substitutions (change regions or repo names as needed)
+substitutions:
+  _AR_REGION: 'us-central1'
+  _AR_REPO: 'ecoorbit-repo'
+  _RUN_REGION: 'us-central1'
