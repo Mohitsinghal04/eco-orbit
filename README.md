@@ -134,10 +134,11 @@ EcoOrbit utilizes Google Cloud services to fulfill the core problem statement: *
 6.  Open your browser to `http://127.0.0.1:8000` to interact with the dashboard.
 
 ### Verification (Testing)
-Run the unit and integration test suite using `pytest` (16/16 tests passing):
+Run the unit and integration test suite using `pytest` (18/18 tests passing):
 ```bash
 .venv\Scripts\python -m pytest
 ```
+
 
 ### Formatting & Linting
 Ensure high-quality, compliant code formatting and type hints validation:
