@@ -29,7 +29,7 @@
       <div class="modal-header">
         <div class="logo-mark">
           <span class="material-symbols-outlined icon-spin">eco</span>
-          <h1>EcoOrbit</h1>
+          <span class="modal-logo-text">EcoOrbit</span>
         </div>
         <h2 id="modal-title">Choose Your Challenge Vertical</h2>
         <p>To personalize your carbon calculations and AI recommendations, select the persona that best matches your current lifestyle:</p>
@@ -77,7 +77,7 @@
           <span class="indicator-dot"></span>
           <span id="active-persona-text">Persona: Urban Commuter</span>
         </div>
-        <button class="btn-secondary btn-small" id="change-persona-btn" aria-label="Change current lifestyle persona">
+        <button class="btn-secondary btn-small" id="change-persona-btn" type="button" aria-label="Change current lifestyle persona">
           <span class="material-symbols-outlined">cached</span> Switch Persona
         </button>
       </div>
@@ -89,7 +89,7 @@
       <div class="metric-card glass-card">
         <div class="metric-info">
           <p class="metric-label">Monthly Footprint</p>
-          <h2 id="metric-total-footprint">0.0 <span class="unit">kg CO2e</span></h2>
+          <div class="metric-value" id="metric-total-footprint">0.0 <span class="unit">kg CO2e</span></div>
         </div>
         <div class="metric-icon-wrapper accent-coral-bg">
           <span class="material-symbols-outlined text-coral">co2</span>
@@ -100,7 +100,7 @@
       <div class="metric-card glass-card">
         <div class="metric-info">
           <p class="metric-label">Projected Reduction</p>
-          <h2 id="metric-projected-reduction">-0.0 <span class="unit">kg CO2e</span></h2>
+          <div class="metric-value" id="metric-projected-reduction">-0.0 <span class="unit">kg CO2e</span></div>
         </div>
         <div class="metric-icon-wrapper accent-teal-bg">
           <span class="material-symbols-outlined text-teal">trending_down</span>
@@ -111,7 +111,7 @@
       <div class="metric-card glass-card">
         <div class="metric-info">
           <p class="metric-label">Eco-Points Earned</p>
-          <h2 id="metric-eco-points">0 <span class="unit">pts</span></h2>
+          <div class="metric-value" id="metric-eco-points">0 <span class="unit">pts</span></div>
         </div>
         <div class="metric-icon-wrapper accent-emerald-bg">
           <span class="material-symbols-outlined text-emerald">workspace_premium</span>
@@ -122,7 +122,7 @@
       <div class="metric-card glass-card">
         <div class="metric-info">
           <p class="metric-label">Rank Status</p>
-          <h2 id="metric-rank">Eco Novice</h2>
+          <div class="metric-value" id="metric-rank">Eco Novice</div>
         </div>
         <div class="metric-icon-wrapper accent-purple-bg">
           <span class="material-symbols-outlined text-purple">spa</span>
@@ -142,16 +142,16 @@
 
         <!-- Calculator Tabs -->
         <div class="tab-buttons" role="tablist" aria-label="Calculator Categories">
-          <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-transport" id="tab-btn-transport">
+          <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-transport" id="tab-btn-transport" type="button">
             <span class="material-symbols-outlined">directions_car</span> Transport
           </button>
-          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-home" id="tab-btn-home">
+          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-home" id="tab-btn-home" type="button">
             <span class="material-symbols-outlined">home</span> Home
           </button>
-          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-food" id="tab-btn-food">
+          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-food" id="tab-btn-food" type="button">
             <span class="material-symbols-outlined">restaurant</span> Food
           </button>
-          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-shopping" id="tab-btn-shopping">
+          <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-shopping" id="tab-btn-shopping" type="button">
             <span class="material-symbols-outlined">shopping_bag</span> Shopping
           </button>
         </div>
@@ -281,7 +281,7 @@
           <div class="chart-content">
             <div class="chart-svg-container">
               <!-- Inline Dynamic SVG Chart -->
-              <svg width="220" height="220" viewBox="0 0 220 220" class="donut-chart" id="emissions-donut">
+              <svg width="220" height="220" viewBox="0 0 220 220" class="donut-chart" id="emissions-donut" role="img" aria-label="Donut chart showing carbon emissions breakdown by category">
                 <circle cx="110" cy="110" r="80" class="chart-bg" />
                 <path id="segment-transport" class="chart-segment text-coral" d="" />
                 <path id="segment-home" class="chart-segment text-teal" d="" />
@@ -325,7 +325,7 @@
             <div class="coach-title">
               <span class="material-symbols-outlined text-emerald logo-pulse">smart_toy</span>
               <div>
-                <h3>EcoCoach Assistant</h3>
+                <h2>EcoCoach Assistant</h2>
                 <span class="badge badge-success">Google Gemini Enabled</span>
               </div>
             </div>

@@ -81,7 +81,8 @@ EcoOrbit utilizes Google Cloud services to fulfill the core problem statement: *
 2.  **Interactive Calculator:** Sliding values triggers instant recalculation queries. Network requests are **debounced by 250ms** during dragging, saving significant network and server resources while keeping visual sliders updating in real-time. Values are dynamically represented using an interactive **SVG Donut Chart** and category legend.
 3.  **EcoCoach Virtual Assistant:**
     *   Powered by the **Google GenAI SDK (Gemini API)** using the fast and lightweight `gemini-1.5-flash` model.
-    *   **Structured Outputs:** Enforces a strict JSON Schema at the API layer. The response is parsed in Python and sent as structured JSON to the frontend, which builds DOM nodes dynamically using safe, text-based methods. **No innerHTML is used**, offering complete immunity to XSS.
+    *   **Structured Outputs:** Enforces a strict JSON Schema at the API layer. The response is parsed in Python and sent as structured JSON to the frontend, which builds DOM nodes dynamically using safe, text-based methods. **No innerHTML is used**, offering complete immunity to XSS (chat clearing uses a child removal loop).
+    *   **Separation of Concerns:** All dynamically generated elements are styled using modular stylesheet CSS class definitions in `styles.css` (`.coach-tips-list`, `.coach-tip-item`, etc.), avoiding ad-hoc inline Javascript styles.
     *   **System Instructions & Safety Settings:** Employs official Gemini `system_instruction` settings to prevent prompt injections, and configures Harm block thresholds (`BLOCK_MEDIUM_AND_ABOVE`) to block hate, harassment, explicit, and dangerous content.
     *   **Resilience:** If the Gemini API key is missing or fails, EcoOrbit gracefully falls back to an expert local rules-based engine returning the exact same structured JSON schema format, maintaining a seamless visual experience.
     *   **Structured Telemetry:** Automatically initializes **Google Cloud Logging** in production, mapping warnings and fallback log calls to GCP Log Explorer.
@@ -133,7 +134,7 @@ EcoOrbit utilizes Google Cloud services to fulfill the core problem statement: *
 6.  Open your browser to `http://127.0.0.1:8000` to interact with the dashboard.
 
 ### Verification (Testing)
-Run the unit and integration test suite using `pytest` (15/15 tests passing):
+Run the unit and integration test suite using `pytest` (16/16 tests passing):
 ```bash
 .venv\Scripts\python -m pytest
 ```
@@ -163,7 +164,9 @@ EcoOrbit is engineered around rigorous WCAG 2.1 and server hardening standards:
 *   **WCAG 2.1 AA Color Contrast:** Muted text parameters use high-contrast HSL slate colors (`#8ea0be`) yielding a contrast ratio of **5.1:1** on the dark backdrop `#0b0f19` (surpassing the minimum standard of **4.5:1**).
 *   **WCAG Tablist Arrows:** Category buttons support Right/Left keyboard arrows to shift active selectors automatically.
 *   **Keyboard Navigation:** Fully focusable interactive nodes with visible `:focus-visible` emerald rings.
-*   **Security Headers Hardening:** Backend server enforces anti-clickjacking (`X-Frame-Options: DENY`), MIME sniffing prevention (`X-Content-Type-Options: nosniff`), and strict `Content-Security-Policy` limits.
+*   **Semantic Heading Structure (SEO):** Enforces a single `<h1>` tag per page (header logo) and maintains logical sequential header levels (`<h2>` for dashboard sections). Metric values use `div` elements to prevent header outline clutter.
+*   **Interactive SVG Accessibility:** Dynamic chart elements assign clear image representations (`role="img"`) and detailed text labels (`aria-label`) for screen-reader mapping.
+*   **Security Headers Hardening:** Backend server enforces anti-clickjacking (`X-Frame-Options: DENY`), MIME sniffing prevention (`X-Content-Type-Options: nosniff`), Strict Content-Security-Policy (CSP), Strict Transport Security (HSTS) with preload, and restrictive Permissions Policies (`camera=(), microphone=(), geolocation=(), payment=()`).
 
 ---
 

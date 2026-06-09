@@ -1029,3 +1029,59 @@ select:focus-visible,
   outline: 2px solid var(--accent-emerald);
   outline-offset: 2px;
 }
+
+/* Header hierarchy & metric styling additions */
+.modal-logo-text {
+  font-size: 28px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--text-primary) 30%, var(--accent-emerald));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.metric-card .metric-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.metric-card .metric-value .unit {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.coach-title h2 {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+/* Coach tip structured styling rules (replacing inline styles) */
+.coach-tips-list {
+  padding-left: 20px !important;
+  margin-top: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+.coach-tip-item {
+  margin-bottom: 8px !important;
+}
+
+.coach-reduction-badge {
+  background: rgba(16, 185, 129, 0.15) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  color: var(--accent-emerald) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  margin-left: 6px !important;
+  display: inline-block;
+}
+
+.coach-conclusion {
+  margin-top: 8px !important;
+}
+

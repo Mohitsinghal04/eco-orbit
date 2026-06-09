@@ -116,3 +116,17 @@ def test_get_coach_advice_mocked(mock_coach):
     assert data["tips"][0]["title"] == "Reduce food waste"
     assert data["conclusion"] == "Good luck!"
     mock_coach.assert_called_once()
+
+
+def test_response_security_headers():
+    """Verify that secure HTTP response headers are set on endpoints."""
+    response = client.get("/api/persona/urban_commuter")
+    assert response.status_code == 200
+    headers = response.headers
+    assert headers.get("X-Frame-Options") == "DENY"
+    assert headers.get("X-Content-Type-Options") == "nosniff"
+    assert headers.get("X-XSS-Protection") == "1; mode=block"
+    assert headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
+    assert "max-age=63072000" in headers.get("Strict-Transport-Security", "")
+    assert "camera=()" in headers.get("Permissions-Policy", "")
+    assert "default-src 'self'" in headers.get("Content-Security-Policy", "")

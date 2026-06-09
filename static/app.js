@@ -65,7 +65,6 @@ const LOCAL_PERSONA_DEFAULTS = {
 const onboardingModal = document.getElementById("onboarding-modal");
 const changePersonaBtn = document.getElementById("change-persona-btn");
 const activePersonaText = document.getElementById("active-persona-text");
-const calculatorForm = document.getElementById("calculator-form");
 
 // Metric display nodes
 const metricTotalFootprint = document.getElementById("metric-total-footprint");
@@ -74,7 +73,6 @@ const metricEcoPoints = document.getElementById("metric-eco-points");
 const metricRank = document.getElementById("metric-rank");
 
 // SVG Segment nodes
-const emissionsDonut = document.getElementById("emissions-donut");
 const chartCenterVal = document.getElementById("chart-center-val");
 
 // Chat nodes
@@ -292,7 +290,9 @@ async function selectPersona(personaId) {
   // Calculate and reset chatbot context
   recalculateEmissions();
   appState.chatHistory = [];
-  chatMessages.innerHTML = "";
+  while (chatMessages.firstChild) {
+    chatMessages.removeChild(chatMessages.firstChild);
+  }
   appendCoachBubble("I've initialized your profile. What would you like to know about your footprint?");
   saveState();
 }
@@ -528,17 +528,6 @@ function updateProjectedReductions() {
   saveState();
 }
 
-// Helper to escape HTML characters and prevent Cross-Site Scripting (XSS)
-function escapeHTML(str) {
-  if (typeof str !== "string") return "";
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 // Helper for debouncing execution of a function
 function debounce(func, delay) {
   let timeoutId;
@@ -569,13 +558,11 @@ function appendCoachBubble(content, isUser = false) {
     
     if (content.tips && content.tips.length > 0) {
       const listEl = document.createElement("ul");
-      listEl.style.paddingLeft = "20px";
-      listEl.style.marginTop = "8px";
-      listEl.style.marginBottom = "8px";
+      listEl.className = "coach-tips-list";
       
       content.tips.forEach(tip => {
         const itemEl = document.createElement("li");
-        itemEl.style.marginBottom = "6px";
+        itemEl.className = "coach-tip-item";
         
         const titleEl = document.createElement("strong");
         titleEl.textContent = (tip.title || "") + ": ";
@@ -585,13 +572,7 @@ function appendCoachBubble(content, isUser = false) {
         const spacing = document.createTextNode(" ");
         
         const reductionEl = document.createElement("code");
-        reductionEl.style.background = "rgba(16, 185, 129, 0.15)";
-        reductionEl.style.padding = "2px 6px";
-        reductionEl.style.borderRadius = "4px";
-        reductionEl.style.color = "var(--accent-emerald)";
-        reductionEl.style.fontSize = "12px";
-        reductionEl.style.fontWeight = "500";
-        reductionEl.style.marginLeft = "4px";
+        reductionEl.className = "coach-reduction-badge";
         reductionEl.textContent = tip.estimated_reduction || "";
         
         itemEl.appendChild(titleEl);
@@ -605,7 +586,7 @@ function appendCoachBubble(content, isUser = false) {
     }
     
     const conclusionEl = document.createElement("p");
-    conclusionEl.style.marginTop = "6px";
+    conclusionEl.className = "coach-conclusion";
     conclusionEl.textContent = content.conclusion || "";
     bubbleContent.appendChild(conclusionEl);
   }
