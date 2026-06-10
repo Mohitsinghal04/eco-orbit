@@ -1,6 +1,6 @@
 """
 AI Coach logic for EcoOrbit.
-Uses Google Generative AI SDK (Gemini API) if configured,
+Uses Google GenAI SDK (google-genai) if configured,
 and falls back to a rules-based expert system otherwise.
 """
 
@@ -11,7 +11,6 @@ import logging
 import os
 from typing import Any, Dict, List
 
-import google.generativeai as genai
 from dotenv import load_dotenv
 
 # Load env variables from .env if present
@@ -20,10 +19,16 @@ load_dotenv()
 # Check if Gemini API key is configured
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 has_gemini = False
+genai_client = None
+GENAI_TYPES = None
 
 if GEMINI_API_KEY and GEMINI_API_KEY != "your_google_gemini_api_key_here":
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
+        import google.genai as genai_module  # pylint: disable=import-error,no-name-in-module
+        import google.genai.types as _gt  # pylint: disable=import-error,no-name-in-module
+
+        genai_client = genai_module.Client(api_key=GEMINI_API_KEY)
+        GENAI_TYPES = _gt
         has_gemini = True
     except Exception as e:  # pylint: disable=broad-except
         logging.warning("Failed to configure Gemini API: %s", e)
@@ -143,92 +148,30 @@ def get_rule_based_advice(persona: str, emissions: Dict[str, float]) -> Dict[str
     }
 
 
+def _build_genai_contents(chat_history: List[Dict[str, str]], prompt: str) -> list:
+    """Build a list of genai Content objects from chat history and current prompt."""
+    contents = []
+    for msg in chat_history[-6:]:
+        role = "user" if msg["role"] == "user" else "model"
+        contents.append(
+            GENAI_TYPES.Content(
+                role=role, parts=[GENAI_TYPES.Part(text=msg["content"])]
+            )
+        )
+    contents.append(
+        GENAI_TYPES.Content(role="user", parts=[GENAI_TYPES.Part(text=prompt)])
+    )
+    return contents
+
+
 def generate_coach_response(
     persona: str, emissions: Dict[str, float], chat_history: List[Dict[str, str]]
 ) -> Dict[str, Any]:
     """Generates structured advice using Gemini API with JSON output schema, falling back to rule-based engine if unavailable."""
-    if not has_gemini:
+    if not has_gemini or genai_client is None or GENAI_TYPES is None:
         return get_rule_based_advice(persona, emissions)
 
     try:
-        # Define the expected JSON output schema for Gemini structured response
-        schema = {
-            "type": "OBJECT",
-            "properties": {
-                "intro": {
-                    "type": "STRING",
-                    "description": "Greeting and analysis of user's highest emissions category and total emissions.",
-                },
-                "highest_category": {
-                    "type": "STRING",
-                    "description": "The highest category of emissions, e.g. Transport, Home Energy, Food, Shopping.",
-                },
-                "tips": {
-                    "type": "ARRAY",
-                    "items": {
-                        "type": "OBJECT",
-                        "properties": {
-                            "title": {
-                                "type": "STRING",
-                                "description": "Short action title.",
-                            },
-                            "description": {
-                                "type": "STRING",
-                                "description": "Specific description of how to accomplish this.",
-                            },
-                            "estimated_reduction": {
-                                "type": "STRING",
-                                "description": "Estimated impact or savings, e.g. -50 kg CO2e/month.",
-                            },
-                        },
-                        "required": ["title", "description", "estimated_reduction"],
-                    },
-                    "description": "Three highly specific tips tailored to user persona and highest emissions category.",
-                },
-                "conclusion": {
-                    "type": "STRING",
-                    "description": "Encouraging final remark.",
-                },
-            },
-            "required": ["intro", "highest_category", "tips", "conclusion"],
-        }
-
-        # Apply safety settings to prevent unsafe content generation (responsible AI practices)
-        safety_settings = [
-            {
-                "category": genai.types.HarmCategory.HARM_CATEGORY_HARASSMENT,
-                "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            },
-            {
-                "category": genai.types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            },
-            {
-                "category": genai.types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            },
-            {
-                "category": genai.types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                "threshold": genai.types.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            },
-        ]
-
-        # Define model with system instruction and generation config matching JSON schema
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=(
-                "You are EcoCoach, an expert virtual sustainability assistant. "
-                "Provide a personalized, encouraging response to the user. "
-                "You must output JSON conforming to the requested schema structure."
-            ),
-            generation_config={
-                "response_mime_type": "application/json",
-                "response_schema": schema,
-            },
-            safety_settings=safety_settings,
-        )
-
-        # Format metrics and context for the AI model prompt
         prompt = (
             f"User Profile: {persona.replace('_', ' ').title()}\n"
             f"Current Carbon Emissions (kg CO2e/month):\n"
@@ -240,15 +183,66 @@ def generate_coach_response(
             f"Generate 3 highly specific, actionable tips to reduce their carbon footprint."
         )
 
-        # Build contents list including chat history for context
-        contents = []
-        for msg in chat_history[-6:]:
-            role = "user" if msg["role"] == "user" else "model"
-            contents.append({"role": role, "parts": [msg["content"]]})
+        contents = _build_genai_contents(chat_history, prompt)
 
-        contents.append({"role": "user", "parts": [prompt]})
+        # Define the expected JSON output schema
+        schema = GENAI_TYPES.Schema(
+            type=GENAI_TYPES.Type.OBJECT,
+            properties={
+                "intro": GENAI_TYPES.Schema(type=GENAI_TYPES.Type.STRING),
+                "highest_category": GENAI_TYPES.Schema(type=GENAI_TYPES.Type.STRING),
+                "tips": GENAI_TYPES.Schema(
+                    type=GENAI_TYPES.Type.ARRAY,
+                    items=GENAI_TYPES.Schema(
+                        type=GENAI_TYPES.Type.OBJECT,
+                        properties={
+                            "title": GENAI_TYPES.Schema(type=GENAI_TYPES.Type.STRING),
+                            "description": GENAI_TYPES.Schema(
+                                type=GENAI_TYPES.Type.STRING
+                            ),
+                            "estimated_reduction": GENAI_TYPES.Schema(
+                                type=GENAI_TYPES.Type.STRING
+                            ),
+                        },
+                        required=["title", "description", "estimated_reduction"],
+                    ),
+                ),
+                "conclusion": GENAI_TYPES.Schema(type=GENAI_TYPES.Type.STRING),
+            },
+            required=["intro", "highest_category", "tips", "conclusion"],
+        )
 
-        response = model.generate_content(contents)
+        response = genai_client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=contents,
+            config=GENAI_TYPES.GenerateContentConfig(
+                system_instruction=(
+                    "You are EcoCoach, an expert virtual sustainability assistant. "
+                    "Provide a personalized, encouraging response to the user. "
+                    "You must output JSON conforming to the requested schema structure."
+                ),
+                response_mime_type="application/json",
+                response_schema=schema,
+                safety_settings=[
+                    GENAI_TYPES.SafetySetting(
+                        category=GENAI_TYPES.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                        threshold=GENAI_TYPES.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    ),
+                    GENAI_TYPES.SafetySetting(
+                        category=GENAI_TYPES.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                        threshold=GENAI_TYPES.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    ),
+                    GENAI_TYPES.SafetySetting(
+                        category=GENAI_TYPES.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                        threshold=GENAI_TYPES.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    ),
+                    GENAI_TYPES.SafetySetting(
+                        category=GENAI_TYPES.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                        threshold=GENAI_TYPES.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+                    ),
+                ],
+            ),
+        )
         return json.loads(response.text)
     except Exception as e:  # pylint: disable=broad-except
         logging.error(

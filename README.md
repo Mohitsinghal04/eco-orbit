@@ -65,7 +65,7 @@ EcoOrbit utilizes Google Cloud services to fulfill the core problem statement: *
 
 | Google Service | Problem Statement Alignment | Implementation Details |
 | :--- | :--- | :--- |
-| **Google Generative AI (Gemini API)** | **Personalized Insights & Footprint Reduction:** Translates complex carbon emissions metrics into highly-tailored, context-aware coaching advice. Generates actionable suggestions matching the user's specific lifestyle persona (Aria, Marcus, Sofia) with estimated CO2 reductions. | Powered by `gemini-1.5-flash` using custom `system_instruction` settings to ensure coaching consistency. |
+| **Google Generative AI (Gemini API)** | **Personalized Insights & Footprint Reduction:** Translates complex carbon emissions metrics into highly-tailored, context-aware coaching advice. Generates actionable suggestions matching the user's specific lifestyle persona (Aria, Marcus, Sofia) with estimated CO2 reductions. | Powered by `gemini-2.0-flash` using the latest **`google-genai` SDK** with structured JSON schema output, safety settings, and system instructions for consistent coaching. |
 | **Google Secret Manager** | **Security & Privacy:** Safely stores and manages the Gemini credentials, keeping API keys out of code repositories and environment configuration files, protecting user telemetry. | Mounted securely in production using Cloud Run environment references. |
 | **Google Cloud Run** | **Practical Usability:** Hosts the FastAPI backend serverlessly on secure public HTTPS endpoints, ensuring high-speed routing, auto-scaling, and accessible dashboard UI. | Deploy path is managed directly via containerized port mappings. |
 | **Google Cloud Build** | **Maintainability & Growth:** Automates compiling and pushing container images to GCP, creating a clean developer CI/CD path to update calculations and models. | Runs CI/CD trigger logic defined in `cloudbuild.yaml`. |
@@ -80,7 +80,7 @@ EcoOrbit utilizes Google Cloud services to fulfill the core problem statement: *
 1.  **Onboarding:** On launch, the user is presented with a modal detailing the three challenge verticals. Selecting a vertical initializes the calculator inputs with realistic defaults matching that persona. The modal includes a Cancel Close button and Escape key dismiss handler to prevent accidental calculation resets (hidden on first onboarding, visible during persona switching). The modal automatically focuses the first option to guide screen-reader and keyboard navigators.
 2.  **Interactive Calculator:** Sliding values triggers instant recalculation queries. Network requests are **debounced by 250ms** during dragging, saving significant network and server resources while keeping visual sliders updating in real-time. Values are dynamically represented using an interactive **SVG Donut Chart** and category legend.
 3.  **EcoCoach Virtual Assistant:**
-    *   Powered by the **Google GenAI SDK (Gemini API)** using the fast and lightweight `gemini-1.5-flash` model.
+    *   Powered by the **Google GenAI SDK (`google-genai`)** using the fast and capable `gemini-2.0-flash` model.
     *   **Structured Outputs:** Enforces a strict JSON Schema at the API layer. The response is parsed in Python and sent as structured JSON to the frontend, which builds DOM nodes dynamically using safe, text-based methods. **No innerHTML is used**, offering complete immunity to XSS (chat clearing uses a child removal loop).
     *   **Separation of Concerns:** All dynamically generated elements are styled using modular stylesheet CSS class definitions in `styles.css` (`.coach-tips-list`, `.coach-tip-item`, etc.), avoiding ad-hoc inline Javascript styles.
     *   **System Instructions & Safety Settings:** Employs official Gemini `system_instruction` settings to prevent prompt injections, and configures Harm block thresholds (`BLOCK_MEDIUM_AND_ABOVE`) to block hate, harassment, explicit, and dangerous content.
@@ -154,7 +154,7 @@ Ensure high-quality, compliant code formatting and type hints validation:
     ```bash
     .venv\Scripts\python -m pylint calculator.py coach.py main.py tests/*.py
     ```
-    *Result: Code scores a perfect **10.00/10** with zero errors or warnings.*
+    *Result: Code scores a perfect **10.00/10** with zero errors or warnings (across all 6 source files).*
 
 ---
 

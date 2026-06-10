@@ -3,6 +3,7 @@ Unit tests for the rules-based sustainability fallback engine in EcoOrbit.
 Run tests using: pytest
 """
 
+import json
 from unittest.mock import MagicMock, patch
 
 from coach import generate_coach_response, get_rule_based_advice
@@ -98,24 +99,38 @@ def test_generate_coach_response_fallback_no_key():
 
 def test_generate_coach_response_gemini_success():
     """Verify generate_coach_response parses successful Gemini JSON response."""
-    with patch("google.generativeai.GenerativeModel.generate_content") as mock_generate:
-        mock_response = MagicMock()
-        mock_response.text = (
-            '{"intro": "Hello test", "highest_category": "Transport", '
-            '"tips": [{"title": "Ride bike", "description": "Bike more", '
-            '"estimated_reduction": "-10 kg"}], "conclusion": "Bye test"}'
-        )
-        mock_generate.return_value = mock_response
+    mock_response = MagicMock()
+    mock_response.text = json.dumps(
+        {
+            "intro": "Hello test",
+            "highest_category": "Transport",
+            "tips": [
+                {
+                    "title": "Ride bike",
+                    "description": "Bike more",
+                    "estimated_reduction": "-10 kg",
+                }
+            ],
+            "conclusion": "Bye test",
+        }
+    )
 
-        with patch("coach.has_gemini", True):
-            emissions = {
-                "transport": 100.0,
-                "home": 50.0,
-                "food": 50.0,
-                "consumption": 50.0,
-                "total": 250.0,
-            }
-            res = generate_coach_response("urban_commuter", emissions, [])
-            assert res["intro"] == "Hello test"
-            assert res["highest_category"] == "Transport"
-            assert res["tips"][0]["title"] == "Ride bike"
+    mock_client = MagicMock()
+    mock_client.models.generate_content.return_value = mock_response
+
+    emissions = {
+        "transport": 100.0,
+        "home": 50.0,
+        "food": 50.0,
+        "consumption": 50.0,
+        "total": 250.0,
+    }
+
+    with patch("coach.has_gemini", True), patch(
+        "coach.genai_client", mock_client
+    ), patch("coach.GENAI_TYPES", MagicMock()):
+        res = generate_coach_response("urban_commuter", emissions, [])
+        assert res["intro"] == "Hello test"
+        assert res["highest_category"] == "Transport"
+        assert res["tips"][0]["title"] == "Ride bike"
+        mock_client.models.generate_content.assert_called_once()
