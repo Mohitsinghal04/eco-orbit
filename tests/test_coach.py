@@ -126,9 +126,11 @@ def test_generate_coach_response_gemini_success():
         "total": 250.0,
     }
 
-    with patch("coach.has_gemini", True), patch(
-        "coach.genai_client", mock_client
-    ), patch("coach.GENAI_TYPES", MagicMock()):
+    with (
+        patch("coach.has_gemini", True),
+        patch("coach.genai_client", mock_client),
+        patch("coach.GENAI_TYPES", MagicMock()),
+    ):
         res = generate_coach_response("urban_commuter", emissions, [])
         assert res["intro"] == "Hello test"
         assert res["highest_category"] == "Transport"
