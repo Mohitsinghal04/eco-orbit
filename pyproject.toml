@@ -1,0 +1,28 @@
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["calculator", "coach", "main"]
+
+[tool.pylint.main]
+py-version = "3.11"
+
+[tool.pylint.messages_control]
+disable = [
+    "line-too-long",
+    "too-many-locals",
+]
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"

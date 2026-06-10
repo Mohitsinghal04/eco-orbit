@@ -1150,5 +1150,47 @@ select:focus-visible,
   opacity: 0.6;
 }
 
+/* ============================================================
+ * ACCESSIBILITY: Respect prefers-reduced-motion (WCAG 2.3.3)
+ * Users who set "Reduce Motion" in OS accessibility settings
+ * receive a zero-animation experience to prevent vestibular
+ * discomfort, dizziness, or seizure risk.
+ * ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skip-link {
+    transition: none;
+  }
+
+  .indicator-dot {
+    animation: none;
+  }
+
+  .icon-spin {
+    animation: none;
+  }
+
+  .logo-pulse {
+    animation: none;
+  }
+
+  .modal-content {
+    animation: none;
+  }
+
+  .tab-content.active {
+    animation: none;
+  }
+}
+
+
 
 

@@ -6,10 +6,12 @@ and mounts the static files for the dashboard frontend.
 
 import logging
 import os
+from enum import Enum
 from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -19,7 +21,7 @@ from coach import generate_coach_response
 # Set up Google Cloud Logging if running in production GCP environment
 if os.getenv("K_SERVICE"):
     try:
-        import google.cloud.logging
+        import google.cloud.logging  # pylint: disable=import-error
 
         client = google.cloud.logging.Client()
         client.setup_logging()
@@ -30,13 +32,20 @@ if os.getenv("K_SERVICE"):
 else:
     logging.basicConfig(level=logging.INFO)
 
+# Disable interactive API docs in production (Cloud Run sets K_SERVICE)
+_IS_PRODUCTION = bool(os.getenv("K_SERVICE"))
+_DOCS_URL = None if _IS_PRODUCTION else "/docs"
+_REDOC_URL = None if _IS_PRODUCTION else "/redoc"
+
 app = FastAPI(
     title="EcoOrbit API",
     description="Carbon footprint tracking and AI coach backend.",
     version="1.0.0",
+    docs_url=_DOCS_URL,
+    redoc_url=_REDOC_URL,
 )
 
-# Restrict CORS to specific local origins or env-configured ports
+# Restrict CORS to specific local origins or env-configured origins
 allowed_origins = os.getenv(
     "ALLOWED_ORIGINS", "http://127.0.0.1:8000,http://localhost:8000"
 ).split(",")
@@ -45,12 +54,37 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
-# Custom Middleware to inject security headers (responsible server hardening)
+# --- Enums for validated string fields ---
+
+
+class CarFuelType(str, Enum):
+    """Enumeration of supported vehicle fuel types."""
+
+    PETROL = "car_petrol"
+    DIESEL = "car_diesel"
+    HYBRID = "car_hybrid"
+    ELECTRIC = "car_electric"
+    NONE = "car_none"
+
+
+class DietType(str, Enum):
+    """Enumeration of supported dietary patterns."""
+
+    HIGH_MEAT = "diet_high_meat"
+    MEDIUM_MEAT = "diet_medium_meat"
+    LOW_MEAT = "diet_low_meat"
+    VEGETARIAN = "diet_vegetarian"
+    VEGAN = "diet_vegan"
+
+
+# --- Security Middleware ---
+
+
 @app.middleware("http")
 async def add_security_headers(request, call_next):
     """Add standard secure HTTP headers to prevent Clickjacking, XSS, and MIME-sniffing."""
@@ -77,13 +111,15 @@ async def add_security_headers(request, call_next):
     return response
 
 
-# Request and Response schemas
+# --- Request and Response Schemas ---
+
+
 class FootprintData(BaseModel):
-    """Pydantic model validating footprint calculator input data."""
+    """Pydantic model validating footprint calculator input data with enum-constrained strings."""
 
     car_distance: float = Field(..., ge=0, description="Monthly car distance in km")
-    car_fuel: str = Field(
-        ..., description="Car fuel type (e.g. car_petrol, car_electric)"
+    car_fuel: CarFuelType = Field(
+        ..., description="Car fuel type — must be a valid CarFuelType enum value"
     )
     transit_distance: float = Field(
         ..., ge=0, description="Monthly public transit distance in km"
@@ -94,8 +130,8 @@ class FootprintData(BaseModel):
     )
     gas_kwh: float = Field(..., ge=0, description="Monthly gas usage in kWh")
     waste_kg: float = Field(..., ge=0, description="Monthly waste generated in kg")
-    diet_type: str = Field(
-        ..., description="Diet classification (e.g. diet_vegan, diet_medium_meat)"
+    diet_type: DietType = Field(
+        ..., description="Diet classification — must be a valid DietType enum value"
     )
     clothing_items: int = Field(
         ..., ge=0, description="New clothing items purchased per month"
@@ -104,7 +140,7 @@ class FootprintData(BaseModel):
         ..., ge=0, description="New electronics purchased per month"
     )
     recycling_pct: float = Field(
-        ..., ge=0, le=100, description="Recycling rate percentage"
+        ..., ge=0, le=100, description="Recycling rate percentage (0–100)"
     )
 
 
@@ -144,6 +180,9 @@ class CoachResponse(BaseModel):
     conclusion: str = Field(..., description="Final encouraging remark")
 
 
+# --- API Endpoints ---
+
+
 @app.get("/api/persona/{persona_id}", response_model=Dict[str, Any])
 def get_persona_defaults(persona_id: str):
     """Fetch default calculator inputs for a specific onboarding persona."""
@@ -158,9 +197,14 @@ def get_persona_defaults(persona_id: str):
 def calculate_footprint(data: FootprintData):
     """Compute carbon footprint values from input metrics."""
     calculator = CarbonCalculator()
-    # Convert FootprintData Pydantic model to dictionary
     data_dict = data.model_dump()
-    return calculator.calculate_total(data_dict)
+    # Convert Enum values to their string value for the calculator
+    data_dict["car_fuel"] = data.car_fuel.value
+    data_dict["diet_type"] = data.diet_type.value
+    result = calculator.calculate_total(data_dict)
+    if "error" in result:
+        return JSONResponse(status_code=422, content={"detail": result["error"]})
+    return result
 
 
 @app.post("/api/coach", response_model=CoachResponse)
@@ -172,7 +216,6 @@ def get_coach_advice(payload: CoachRequest):
 
 
 # Mount the frontend static files at root
-# Ensure index.html exists in static folder first
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
     app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
@@ -180,7 +223,6 @@ if os.path.exists(static_dir):
 if __name__ == "__main__":
     import uvicorn
 
-    # Read port/host from env or default
     port = int(os.getenv("PORT", "8000"))
     host = os.getenv("HOST", "127.0.0.1")
     uvicorn.run("main:app", host=host, port=port, reload=True)
