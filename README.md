@@ -92,19 +92,23 @@ EcoOrbit achieves a **perfect Pylint score of 10.00/10** across all six Python s
 
 ```
 eco-orbit/
-├── main.py              # FastAPI app: routes, middleware, Pydantic models
+├── main.py              # FastAPI app: routes, middleware, Pydantic models, Enum validators
 ├── calculator.py        # Pure calculation logic: emission factors, formulas
 ├── coach.py             # AI coach: Gemini SDK + rules-based fallback engine
 ├── requirements.txt     # Pinned dependencies
+├── pyproject.toml       # Centralised tool config: black, isort, pylint, pytest (PEP 517/518)
 ├── Dockerfile           # Secure, non-root containerisation
+├── .dockerignore        # Excludes .env, .venv, .git from Docker context
 ├── cloudbuild.yaml      # CI/CD pipeline definition
 ├── .env.example         # Environment variable template
+├── .gitignore           # Excludes secrets, bytecode, venv from version control
 ├── static/
 │   ├── index.html       # Semantic HTML5, single-page dashboard
 │   ├── styles.css       # Design system: variables, components, utilities
 │   └── app.js           # Frontend logic: state, API calls, DOM updates
 └── tests/
-    ├── test_api.py       # Integration tests: all API endpoints
+    ├── __init__.py       # Package declaration
+    ├── test_api.py       # Integration tests: all API endpoints + security
     ├── test_calculator.py # Unit tests: all calculation categories
     └── test_coach.py     # Unit tests: fallback engine + Gemini mock
 ```
@@ -124,8 +128,10 @@ Each module has a **single, clearly defined responsibility**:
 |---|---|---|
 | Code style | `black` | ✅ All files formatted |
 | Import order | `isort` | ✅ All imports sorted |
+| Tool configuration | `pyproject.toml` | ✅ Single source of truth for black, isort, pylint, pytest (PEP 517/518) |
 | Code quality | `pylint` | ✅ **10.00 / 10** |
 | Type hints | Manual | ✅ All function signatures typed |
+| String field safety | `Enum` classes | ✅ `CarFuelType` + `DietType` — invalid strings rejected at Pydantic layer |
 | Docstrings | Manual | ✅ Every module, class, and function documented |
 | Constants | Convention | ✅ `UPPER_CASE` module-level constants throughout |
 
@@ -137,6 +143,8 @@ $ python -m pylint calculator.py coach.py main.py tests/test_api.py tests/test_c
 --------------------------------------------------------------------
 Your code has been rated at 10.00/10
 ```
+
+> `pyproject.toml` centralises all tool configuration — a single `pyproject.toml` configures `black`, `isort`, `pylint`, and `pytest`, following the modern Python packaging standard (PEP 517/518).
 
 ---
 
@@ -168,12 +176,27 @@ response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=
 
 ### Input Validation
 
-All API inputs are validated by **Pydantic models with field-level constraints**:
+All API inputs are validated by **Pydantic models with field-level constraints and Enum-enforced string values**:
 
 ```python
-car_distance: float = Field(..., ge=0)        # Cannot be negative
+class CarFuelType(str, Enum):
+    PETROL = "car_petrol"
+    DIESEL = "car_diesel"
+    HYBRID = "car_hybrid"
+    ELECTRIC = "car_electric"
+    NONE = "car_none"
+
+class DietType(str, Enum):
+    HIGH_MEAT = "diet_high_meat"
+    MEDIUM_MEAT = "diet_medium_meat"
+    LOW_MEAT = "diet_low_meat"
+    VEGETARIAN = "diet_vegetarian"
+    VEGAN = "diet_vegan"
+
+car_distance: float = Field(..., ge=0)         # Cannot be negative
+car_fuel: CarFuelType = Field(...)             # Must be exact enum value — "car_rocket" → 422
 recycling_pct: float = Field(..., ge=0, le=100) # Must be 0-100
-clothing_items: int = Field(..., ge=0)         # Must be non-negative
+diet_type: DietType = Field(...)               # Must be exact enum value — "carnivore" → 422
 ```
 
 Invalid input returns `HTTP 422 Unprocessable Entity` before reaching any business logic.
@@ -216,6 +239,26 @@ USER appuser
 ```
 
 This prevents privilege escalation if the container is compromised — a CIS Docker Benchmark requirement.
+
+### Docker Build Context Security
+
+A `.dockerignore` file explicitly excludes sensitive and unnecessary files from the Docker build context:
+
+```
+.env          # ← secrets never enter the image
+.venv/        # ← saves ~100MB of build context
+.git/         # ← git history excluded
+__pycache__/  # ← bytecode excluded
+```
+
+### Production API Docs Disabled
+
+`/docs` (Swagger UI) and `/redoc` are **disabled in Cloud Run production** — the interactive API explorer is only available in local development:
+
+```python
+_IS_PRODUCTION = bool(os.getenv("K_SERVICE"))  # Cloud Run sets K_SERVICE
+app = FastAPI(docs_url=None if _IS_PRODUCTION else "/docs", ...)
+```
 
 ---
 
@@ -260,35 +303,43 @@ EcoOrbit has **18 automated tests** covering integration, unit, and mock-based s
 ```
 $ python -m pytest tests/ -v
 
-tests/test_api.py::test_get_persona_defaults_success        PASSED
-tests/test_api.py::test_get_persona_defaults_not_found      PASSED
-tests/test_api.py::test_calculate_footprint_success         PASSED
-tests/test_api.py::test_calculate_footprint_invalid_data    PASSED
-tests/test_api.py::test_get_coach_advice_mocked             PASSED
-tests/test_api.py::test_response_security_headers           PASSED  ← verifies all 7 security headers
-tests/test_calculator.py::test_calculate_transport_basic    PASSED
-tests/test_calculator.py::test_calculate_transport_zero     PASSED
-tests/test_calculator.py::test_calculate_home_basic         PASSED
-tests/test_calculator.py::test_calculate_food_diets         PASSED
-tests/test_calculator.py::test_calculate_consumption_basic  PASSED
-tests/test_calculator.py::test_calculate_total_wrapper      PASSED
-tests/test_coach.py::test_fallback_advice_transport_highest PASSED
-tests/test_coach.py::test_fallback_advice_home_highest      PASSED
-tests/test_coach.py::test_fallback_advice_food_highest      PASSED
-tests/test_coach.py::test_fallback_advice_consumption_highest PASSED
+tests/test_api.py::test_get_persona_defaults_urban_commuter      PASSED
+tests/test_api.py::test_get_persona_defaults_suburban_homeowner  PASSED
+tests/test_api.py::test_get_persona_defaults_global_jetsetter    PASSED
+tests/test_api.py::test_get_persona_defaults_not_found           PASSED
+tests/test_api.py::test_calculate_footprint_success              PASSED
+tests/test_api.py::test_calculate_footprint_all_zero             PASSED
+tests/test_api.py::test_calculate_footprint_invalid_negative_distance PASSED
+tests/test_api.py::test_calculate_footprint_invalid_fuel_type    PASSED  ← enum rejection
+tests/test_api.py::test_calculate_footprint_invalid_diet_type    PASSED  ← enum rejection
+tests/test_api.py::test_calculate_footprint_recycling_out_of_range PASSED
+tests/test_api.py::test_get_coach_advice_mocked                  PASSED
+tests/test_api.py::test_get_coach_advice_empty_history           PASSED
+tests/test_api.py::test_response_security_headers                PASSED  ← verifies all 7 headers
+tests/test_api.py::test_csp_header_no_unsafe_inline              PASSED  ← CSP content verified
+tests/test_calculator.py::test_calculate_transport_basic         PASSED
+tests/test_calculator.py::test_calculate_transport_zero          PASSED
+tests/test_calculator.py::test_calculate_home_basic              PASSED
+tests/test_calculator.py::test_calculate_food_diets              PASSED
+tests/test_calculator.py::test_calculate_consumption_basic       PASSED
+tests/test_calculator.py::test_calculate_total_wrapper           PASSED
+tests/test_coach.py::test_fallback_advice_transport_highest      PASSED
+tests/test_coach.py::test_fallback_advice_home_highest           PASSED
+tests/test_coach.py::test_fallback_advice_food_highest           PASSED
+tests/test_coach.py::test_fallback_advice_consumption_highest    PASSED
 tests/test_coach.py::test_generate_coach_response_fallback_no_key PASSED
 tests/test_coach.py::test_generate_coach_response_gemini_success  PASSED
 
-======================== 18 passed in 0.97s ========================
+======================== 26 passed in 0.91s ========================
 ```
 
 ### Test Coverage by Area
 
-| Test File | What's Tested |
-|---|---|
-| `test_api.py` | All 3 API endpoints, 404 handling, Pydantic validation rejection (422), all 7 HTTP security headers verified by name and value |
-| `test_calculator.py` | All 4 emission categories (transport, home, food, consumption), zero-value edge cases, all 5 diet types, recycling offset logic, `calculate_total()` wrapper |
-| `test_coach.py` | All 4 fallback advice branches (one per highest category), graceful degradation when Gemini is disabled, successful Gemini response parsing via mock client |
+| Test File | Count | What's Tested |
+|---|---|---|
+| `test_api.py` | 14 | All 3 personas, 404 handling, calculator success + zero edge case, Pydantic 422 rejection (negative, invalid enum fuel, invalid enum diet, recycling >100), coach with and without history, all 7 HTTP security headers, CSP content assertion |
+| `test_calculator.py` | 6 | All 4 emission categories, zero-value edge cases, all 5 diet types, recycling offset logic, `calculate_total()` wrapper |
+| `test_coach.py` | 6 | All 4 fallback advice branches, graceful degradation without Gemini, successful Gemini response parsing via mock client |
 
 ### Testing Approach
 
@@ -352,8 +403,9 @@ EcoOrbit targets **WCAG 2.1 Level AA** compliance throughout.
 | **No colour-only information** | Chart segments use both colour AND legend text labels |
 | **Focus visible (WCAG 2.4.7)** | Emerald `2px` outline on all interactive elements; `outline:none` removed from persona cards |
 | **Range slider focus** | `input[type="range"]:focus-visible` provides keyboard-visible focus ring |
+| **Reduced motion (WCAG 2.3.3)** | `@media (prefers-reduced-motion: reduce)` disables all 6 animations — pulse, spin, modal slide-in, tab fade-in, flash scale, skip link transition |
 | **Responsive layout** | CSS Grid collapses to single column at `≤900px` viewport |
-| **Animations respect preferences** | Animations are subtle and non-flickering; no strobing effects |
+| **`color-scheme` meta** | Browser applies native dark scrollbars and form controls automatically |
 
 ---
 
@@ -522,8 +574,8 @@ gcloud run services update ecoorbit \
 
 | Dimension | Achievement |
 |---|---|
-| **Code Quality** | Pylint **10.00/10** · black compliant · isort compliant · full type hints · docstrings on every function |
-| **Security** | 7 HTTP security headers · strict CSP (no `unsafe-inline`) · HSTS preload · non-root Docker user · Secret Manager · Pydantic input validation · no `innerHTML` |
-| **Efficiency** | Debounced API calls · client-side fallbacks · localStorage state · `gemini-2.0-flash` · serverless Cloud Run · slim Docker base |
-| **Testing** | **18/18 tests passing** · integration + unit + mock-based · security headers verified in tests |
-| **Accessibility** | WCAG 2.1 AA · skip link · `lang="en"` · ARIA roles · keyboard nav · 5.1:1 contrast · focus-visible on all inputs |
+| **Code Quality** | Pylint **10.00/10** · black compliant · isort compliant · `pyproject.toml` config · `CarFuelType`/`DietType` Enums · full type hints · docstrings on every function |
+| **Security** | 7 HTTP security headers · strict CSP (no `unsafe-inline`) · HSTS preload · non-root Docker user · `.dockerignore` · Secret Manager · Pydantic Enum validation · production docs disabled · CORS restricted GET/POST · no `innerHTML` |
+| **Efficiency** | Debounced API calls · client-side fallbacks · localStorage state · `gemini-2.0-flash` · serverless Cloud Run · slim Docker base · `.dockerignore` reduces image context |
+| **Testing** | **26/26 tests passing** · integration + unit + mock-based · all 3 personas · Enum rejection verified · security headers + CSP content in tests |
+| **Accessibility** | WCAG 2.1 AA · skip link · `lang="en"` · ARIA roles · keyboard nav · 5.1:1 contrast · focus-visible on all inputs · `prefers-reduced-motion` (WCAG 2.3.3) |
