@@ -28,6 +28,26 @@
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Skip to main content link (WCAG 2.4.1 bypass blocks) */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 20px;
+  background: var(--accent-emerald);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 10000;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
 /* Reset & Base Styles */
 * {
   box-sizing: border-box;
@@ -226,7 +246,6 @@ h1, h2, h3, h4 {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  outline: none;
 }
 
 .persona-icon {
@@ -547,6 +566,12 @@ input[type="range"] {
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.1);
   outline: none;
+}
+
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent-emerald);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
 input[type="range"]::-webkit-slider-thumb {

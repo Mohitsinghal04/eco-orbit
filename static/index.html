@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EcoOrbit - Smart Carbon Tracker & AI Coach</title>
   <meta name="description" content="Calculate, track, and reduce your carbon footprint with customized insights and our virtual sustainability AI coach.">
+  <meta name="theme-color" content="#0b0f19">
+  <meta name="color-scheme" content="dark">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,6 +17,9 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+  <!-- Skip to main content link for keyboard/screen reader users -->
+  <a class="skip-link" href="#main-content">Skip to main content</a>
 
   <!-- Background Ambient Glows -->
   <div class="ambient-glow glow-1" aria-hidden="true"></div>
@@ -84,7 +89,7 @@
     </header>
 
     <!-- Metrics Row -->
-    <section class="metrics-row" aria-label="Key Performance Indicators">
+    <section class="metrics-row" aria-label="Key Performance Indicators" aria-live="polite" aria-atomic="false">
       <!-- Metric 1: Carbon footprint -->
       <div class="metric-card glass-card">
         <div class="metric-info">
@@ -131,7 +136,7 @@
     </section>
 
     <!-- Main Workspace Grid -->
-    <main class="workspace-grid">
+    <main class="workspace-grid" id="main-content">
       
       <!-- Calculator Panel (Left Column) -->
       <section class="workspace-panel glass-card panel-left" aria-label="Carbon Calculators">
